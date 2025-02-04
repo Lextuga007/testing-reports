@@ -1,0 +1,85 @@
+---
+title: "Observable"
+format: 
+  html:
+    toc: true
+    echo: false
+    warning: false
+    messages: false
+    code-summary: "Show the code"
+    code-tools: true
+---
+
+```{r}
+ojs_define(data = NHSRdatasets::ae_attendances)
+
+```
+
+::: panel-tabset
+
+## Plot
+
+```{ojs}
+//| panel: input
+//| layout-ncol: 1
+viewof attendances = Inputs.checkbox(
+  ["1", "2", "other"],
+  {value: ["1", "2"],
+  label: "Attendance type:"}
+)
+viewof code = Inputs.checkbox(
+  ["R1H", "RRK", "RF4"],
+  {value: ["R1H", "RF4"],
+  label: "Hospitals:"
+  }
+)
+```
+
+```{ojs}
+filtered = transpose(data).filter(function(hospital){
+ return attendances.includes(hospital.type) &&
+ code.includes(hospital.org_code);
+})
+
+```
+
+```{ojs}
+//| code-fold: true
+Plot.plot({
+  grid: true,
+  marginRight: 60,
+  facet: {label: null},
+  marks: [
+    Plot.frame(),
+    Plot.lineY(filtered, {
+      x: "period",
+      y: "breaches",
+      fx: "type",
+      fy: "org_code"
+    })
+  ]
+})
+```
+
+## SPC
+
+```{r}
+library(NHSRdatasets)
+library(NHSRplotthedots)
+library(dplyr)
+
+NHSRdatasets::ae_attendances |> 
+  dplyr::filter(org_code == "RQM",
+                type == 1) |> 
+  NHSRplotthedots::ptd_spc(
+    value_field = breaches,
+    date_field = period,
+    improvement_direction = "decrease"
+  ) |> 
+  NHSRplotthedots::ptd_create_plotly(
+  ) 
+
+
+```
+
+:::
