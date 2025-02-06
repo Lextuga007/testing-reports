@@ -11,9 +11,24 @@ format:
 ---
 
 ```{r}
-ojs_define(data = NHSRdatasets::ae_attendances)
+library(crosstalk)
+library(reactable)
+library(dplyr)
+
+ae_att <- NHSRdatasets::ae_attendances 
+
+distinct_ae <- ae_att |> 
+  dplyr::filter(type == 1,
+                period == "2017-03-01")
+
+ojs_define(data = ae_att)
+
+organisations <- sort(unique(distinct_ae$org_code))
+
+ojs_define(orgCodes = organisations)
 
 ```
+
 
 ::: panel-tabset
 
@@ -55,13 +70,19 @@ Plot.plot({
       x: "period",
       y: "breaches",
       fx: "type",
-      fy: "org_code"
+      fy: "org_code",
+      sort: "period",
+      tip: true
     })
   ]
 })
 ```
 
 ## SPC
+
+This uses `NHSRplotthedots` for the `plotly` chart and is the development version (not CRAN).
+The only interactivity is from `plotly` itself.
+It might be that the data needs to be pre calculated (using `NHSRplotthedots` to get that possibly) but would mean that there is potentially a huge dataset needed to be manipulated at the output side.
 
 ```{r}
 library(NHSRdatasets)
@@ -79,6 +100,22 @@ NHSRdatasets::ae_attendances |>
   NHSRplotthedots::ptd_create_plotly(
   ) 
 
+
+```
+
+## Building plot
+
+Trying out code to link the codes to a reactable from the [timelyportfolio blog](https://timelyportfolio.github.io/quarto_tests/examples/quarto_observable_crosstalk/quarto_observable_crosstalk.html)
+
+```{ojs}
+// use Observable select input to allow user to pick states
+viewof selectedCodes = Inputs.select(orgCodes, {label: "NHS hospitals", multiple: true})
+```
+
+```{r}
+# Note since we do not supply a key in SharedData$new() the keys will be rownames(state.x77) which are the state names that populate the Observable selection output.
+dat <- SharedData$new(distinct_ae, ~org_code)
+reactable(dat)
 
 ```
 
