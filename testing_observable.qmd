@@ -27,12 +27,94 @@ organisations <- sort(unique(distinct_ae$org_code))
 
 ojs_define(orgCodes = organisations)
 
+subset_df <- ae_att |>
+  filter(org_code == "RRF", type == 1) |> 
+  arrange(period)
+
+ojs_define(subset_aeatt = subset_df)
+
 ```
 
 
 ::: panel-tabset
 
-## Plot
+## SPC Plot - WIP
+
+Built with the help of Observable notebooks (see README).
+
+<https://observablehq.com/@training/replicating-nhsrplotthedots-spcs>
+
+Calculating mean used a function from D3:
+
+<https://talk.observablehq.com/t/histogram-with-average-line/7099>
+<https://observablehq.com/@d3/d3-mean-d3-median-and-friends>
+
+```{ojs}
+d3 = require("d3@7")
+```
+
+
+```{ojs}
+
+Inputs.table(transpose(subset_aeatt), { sort: "period", reverse: false })
+
+Plot.plot({
+  title: "A and E Attendances",
+  x: { label: "Dates" },
+  y: { label: "Breaches" },
+  marks: [
+    Plot.frame({ strokeOpacity: 0.1, marginRight: 25 }),
+    Plot.dot(transpose(subset_aeatt), {
+      x: "period",
+      y: "breaches",
+      fill: "gray",
+      r: 6
+    }),
+    Plot.dot(
+      transpose(subset_aeatt), 
+      Plot.pointer({
+        x: "period",
+        y: "breaches",
+        fill: "gray",
+        stroke: "type",
+        opacity: 0.6,
+        r: 8,
+        tip: true,
+   //     title: (d) => `Breaches: ${d.breaches}\nDate: ${d.period.toISOString().slice(0, 10)}`
+      }),
+    ),
+    Plot.tip(transpose(subset_aeatt), Plot.selectMaxY({
+      x: "period", 
+      y: "breaches"
+    })),
+    Plot.crosshair(transpose(subset_aeatt), {
+      x: "period", 
+      y: "breaches"
+    }),
+    Plot.lineY(transpose(subset_aeatt), {
+      x: "period", 
+      y: "breaches"
+    }),
+    Plot.ruleY([d3.mean(transpose(subset_aeatt).map(d => d.breaches))], {
+      stroke: "red",
+      tip: true,
+      title: (d) => `Breaches: ${d3.mean(transpose(subset_aeatt).map(d => d.breaches))}`
+    }),
+    Plot.text(
+      transpose(subset_aeatt),
+      Plot.selectLast({
+        x: "period",
+        y: "breaches",
+        text: "org_code",
+        dx: 12,
+        fontSize: 12
+      })
+    )
+  ]
+})
+```
+
+## Facet attempt
 
 ```{ojs}
 //| panel: input
@@ -78,6 +160,7 @@ Plot.plot({
 })
 ```
 
+
 ## SPC
 
 This uses `NHSRplotthedots` for the `plotly` chart and is the development version (not CRAN).
@@ -103,7 +186,7 @@ NHSRdatasets::ae_attendances |>
 
 ```
 
-## Building plot
+## reactable link - WIP
 
 Trying out code to link the codes to a reactable from the [timelyportfolio blog](https://timelyportfolio.github.io/quarto_tests/examples/quarto_observable_crosstalk/quarto_observable_crosstalk.html)
 
